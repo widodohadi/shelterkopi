@@ -1,13 +1,23 @@
 import base64
 import math
 import os
-import sqlite3
-import zlib
-from datetime import datetime, timedelta, timezone
 
-import pandas as pd
-import requests
-import streamlit as st
+import sqlite3
+...
+DB_FILE = "shelterkopi.db"
+...
+def db():
+    return sqlite3.connect(DB_FILE)
+
+import psycopg2
+
+# Ubah fungsi db() agar membaca URL Supabase
+def db():
+    if "DATABASE_URL" in st.secrets:
+        url = st.secrets["DATABASE_URL"]
+    else:
+        url = "postgresql://postgres:ShelterKopi2026@db.eatbthzfktiplnugrewl.supabase.co:5432/postgres"
+    return psycopg2.connect(url)
 
 # ======================================================================
 # KONFIGURASI
@@ -399,7 +409,7 @@ def chip_harga(m):
 # ======================================================================
 def get_trx(trx_id):
     conn = db()
-    df = pd.read_sql("SELECT * FROM transaksi WHERE id = ?", conn, params=(int(trx_id),))
+    df = pd.read_sql("SELECT * FROM transaksi WHERE id = %s", conn, params=(int(trx_id),))
     conn.close()
     return df.iloc[0].to_dict() if not df.empty else None
 
