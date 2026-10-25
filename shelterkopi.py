@@ -1,17 +1,55 @@
 import base64
+from datetime import datetime, timedelta, timezone
 import math
 import os
+import zlib
 
-import sqlite3
-...
-DB_FILE = "shelterkopi.db"
-...
-def db():
-    return sqlite3.connect(DB_FILE)
-
+import pandas as pd
 import psycopg2
+import requests
+import streamlit as st
 
-# Ubah fungsi db() agar membaca URL Supabase
+# ======================================================================
+# KONFIGURASI
+# ======================================================================
+WIB = timezone(timedelta(hours=7))
+OWNER_PIN = os.getenv("OWNER_PIN", "1234")  # ganti PIN pemilik di sini
+DEFAULT_TOPIC = os.getenv("NTFY_TOPIC", "shelterkopi-7391")
+
+NAMA_KEDAI = "Shelter Kopi"
+HANDLE = "shelterkopi_"
+JAM_BUKA = "16.00 - 00.00"
+ALAMAT = "Jl. Pantai Labu, Emplasmen Kualanamu, Kec. Beringin, Kabupaten Deli Serdang, Sumatera Utara."
+KATEGORI = ["Kopi Susu", "Kopi Hitam", "Bukan Kopi"]
+STOK_AWAL = 50
+
+st.set_page_config(page_title="shelterkopi_", page_icon="☕", layout="wide")
+
+# Menu persis seperti lembar menu: (nama, kategori, harga panas, harga dingin) - 0 = tidak tersedia
+MENU_AWAL = [
+    ("Kopi Susu", "Kopi Susu", 13000, 15000),
+    ("Cappuccino", "Kopi Susu", 15000, 18000),
+    ("Kopster", "Kopi Susu", 0, 17000),
+    ("Vietnam Drip", "Kopi Susu", 20000, 0),
+    ("Espresso", "Kopi Hitam", 13000, 15000),
+    ("Americano", "Kopi Hitam", 13000, 15000),
+    ("Kopi Tubruk", "Kopi Hitam", 13000, 0),
+    ("Kopi Klasik", "Kopi Hitam", 13000, 0),
+    ("V60", "Kopi Hitam", 20000, 20000),
+    ("Teh Lemon", "Bukan Kopi", 12000, 12000),
+    ("Teh Hijau", "Bukan Kopi", 15000, 15000),
+    ("Teh Tarik Om", "Bukan Kopi", 13000, 13000),
+    ("Taro", "Bukan Kopi", 15000, 15000),
+    ("Redvelvet", "Bukan Kopi", 15000, 15000),
+    ("Coklat", "Bukan Kopi", 15000, 15000),
+    ("Milo", "Bukan Kopi", 15000, 15000),
+    ("Lemsu", "Bukan Kopi", 13000, 13000),
+]
+
+
+# ======================================================================
+# DATABASE & HELPER
+# ======================================================================
 def db():
     if "DATABASE_URL" in st.secrets:
         url = st.secrets["DATABASE_URL"]
