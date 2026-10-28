@@ -448,10 +448,10 @@ def chip_harga(m):
 # ======================================================================
 def get_trx(trx_id):
     conn = db()
-    df = pd.read_sql("SELECT * FROM transaksi WHERE id = %s", conn, params=(int(trx_id),))
+    query = text("SELECT * FROM transaksi WHERE id = :id")
+    df = pd.read_sql(query, conn, params={"id": int(trx_id)})
     conn.close()
     return df.iloc[0].to_dict() if not df.empty else None
-
 
 def _angka(v):
     try:
