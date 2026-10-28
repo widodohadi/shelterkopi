@@ -1,3 +1,4 @@
+from sqlalchemy import text
 import base64
 from datetime import datetime, timedelta, timezone
 import math
